@@ -17,6 +17,8 @@ VObj=VideoReader(video);
 numFrames = get(VObj, 'NumberOfFrames');
 % get frame rate
 FrameRate = get(VObj,'FrameRate');
+bitPerPx = get(VObj,'BitsPerPixel');
+
 
 %get first frame as background
 background = read(VObj,1); 
@@ -24,7 +26,7 @@ background = read(VObj,1);
 [ysize,xsize,~] = size(background);
 
 %precision parameters for substitution
-sensitivity = 3;
+sensitivity = 10;
 blockSize = 10;
 
 %image for new background
@@ -53,13 +55,16 @@ for index=2:numFrames %iterate over frames
     %mask -> zero if sub with new background, one otherwise
     mask = zeros(ysize,xsize,3);
     %matrix of differences
-    diff = abs(background-vidFrame);
+    %diff = abs(background-vidFrame);
     %build mask
-    for row=1:blockSize:ysize
-       for col=1:blockSize:xsize
-            if(diff(row,col,1)> sensitivity || diff(row,col,2) > sensitivity || diff(row,col,3)>sensitivity)
+    for row=1:blockSize:ysize-blockSize
+       for col=1:blockSize:xsize-blockSize
+           avgb = mean(background(row:row+blockSize,col:col+blockSize),'all');
+           avgi = mean(vidFrame(row:row+blockSize,col:col+blockSize),'all');
+           
+            if(abs(avgb-avgi)>sensitivity)
                if(row+blockSize < ysize && col+blockSize < xsize)
-               mask(row:row+blockSize,col:col+blockSize,1:3) = 1;
+                 mask(row:row+blockSize,col:col+blockSize,1:3) = 1;
                end
             end
        end
